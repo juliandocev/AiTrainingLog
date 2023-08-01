@@ -1,25 +1,7 @@
 import cv2
-from mediapipe import *
 import numpy as np
-
-
-def calculate_angle(a, b, c):
-    # takes the points and convert them tu np array
-    a = np.array(a)  # First
-    b = np.array(b)  # Mid
-    c = np.array(c)  # End
-
-    # calculate the radians for the particular joint
-    radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
-
-    # calculation of the angle
-    angle = np.abs(radians * 180.0 / np.pi)
-
-    # convert it to an angle between 0 and 180 degree
-    if angle > 180.0:
-        angle = 360 - angle
-
-    return angle
+from mediapipe import *
+from utils import calculations as calc
 
 
 class MediaPipeTool:
@@ -61,18 +43,32 @@ class MediaPipeTool:
                 # Extract Landmarks
                 try:
                     landmarks = results.pose_landmarks.landmark
-                    for landmark in self.mp_pose.PoseLandmark:
-                        print(landmark)
-                    print(landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value])
+
+                    # Get coordinates
+                    shoulder = [landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
+                                landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                    elbow = [landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
+                             landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                    wrist = [landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value].x,
+                             landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+
+                    # Calculate angle
+                    elbow_angle = calc.calculate_angle(shoulder, elbow, wrist)
+
+                    # Visualize angle
+                    cv2.putText(img=image, text=str(elbow_angle),
+                                org=calc.joint_position_on_screen(elbow),  # Visualize this is calculation of the
+                                # positioning of the text in respect of the feed size tuple(np.multiply(elbow,[640,
+                                # 480]).astype(int))
+                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255, 255, 255), thickness=2,
+                                lineType=cv2.LINE_AA
+                                )
+
+                    # for landmark in self.mp_pose.PoseLandmark:
+                    #     print(landmark)
+                    # print(landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value])
                 except:
                     pass
-
-                shoulder = [landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
-                            landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
-                elbow = [landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
-                         landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
-                wrist = [landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value].x,
-                         landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value].y]
 
                 # print(results)
                 # print(results.pose_landmarks)
